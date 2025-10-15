@@ -153,6 +153,77 @@ def test_segmentation_of_gait_cycles():
     assert ensemble_average_std_y.max() < 300, "Ensemble std GRF should be less than 300 N at all times"
     assert ensemble_average_std_y.min() > 0, "Ensemble std GRF should be greater than 0 N at all times"
 
+
+def test_rotate_by_axis():
+    """Test the rotate_by_axis function in utils/rotation.py"""
+    from fk.rotation import rotate_by_axis
+    import scipy.spatial.transform
+
+    for _ in range(100):
+        p = np.random.uniform(-10, 10, size=(3,))
+        axis = [[0,1,0], [1,0,0], [0,0,1]][np.random.randint(0,3)]
+        angle = np.random.uniform(-2*np.pi, 2*np.pi)
+        p_rotated, R = rotate_by_axis(p, axis, angle)
+
+        np.testing.assert_allclose(R @ R.T, np.eye(3), atol=1e-6, err_msg="Rotation matrix should be orthogonal")
+        np.testing.assert_allclose(np.linalg.det(R), 1.0, atol=1e-6, err_msg="Rotation matrix should have determinant 1")
+
+        rot = scipy.spatial.transform.Rotation.from_rotvec(angle * np.array(axis))
+        R_scipy = rot.as_matrix()
+        p_rotated_scipy = R_scipy @ p
+
+        np.testing.assert_allclose(R, R_scipy, atol=1e-4, err_msg="Rotation matrices should match scipy implementation")
+        np.testing.assert_allclose(p_rotated, p_rotated_scipy, atol=1e-4, err_msg="Rotated points should match scipy implementation")
+
+def test_rotation_matrix():
+    """Test that the rotation matrix is orthogonal and has determinant 1."""
+    from fk.rotation import rotate_multi_axis
+    import scipy.spatial.transform
+    import numpy as np
+
+    for _ in range(100):
+        p = np.random.uniform(-10, 10, size=(3,))
+        order = np.random.choice(['xyz', 'xzy', 'yxz', 'yzx', 'zxy', 'zyx'])
+        angles = np.random.uniform(-2*np.pi, 2*np.pi, size=(3,))
+        p1, R = rotate_multi_axis(p, order, angles)
+
+        # Check orthogonality: R * R^T should be identity
+        np.testing.assert_allclose(R @ R.T, np.eye(3), atol=1e-6, err_msg="Rotation matrix should be orthogonal")
+        # Check determinant: det(R) should be 1
+        np.testing.assert_allclose(np.linalg.det(R), 1.0, atol=1e-6, err_msg="Rotation matrix should have determinant 1")
+
+        rot = scipy.spatial.transform.Rotation.from_euler(order, angles)
+        R_scipy = rot.as_matrix()
+        p1_scipy = R_scipy @ p
+
+        np.testing.assert_allclose(R, R_scipy, atol=1e-4, err_msg="Rotation matrices should match scipy implementation")
+        np.testing.assert_allclose(p1, p1_scipy, atol=1e-4, err_msg="Rotated points should match scipy implementation")
+
+def test_marker_error():
+    """Test the marker error calculation."""
+    from fk.forward_kinematics import forward_kinematics
+    from utils.load_data import load_kinematics_data, load_marker_data
+    from utils.visualize import evaluate_marker_error
+    from model.kintree import kintree
+
+    q_all = load_kinematics_data()
+    marker_data = load_marker_data()
+    errors = []
+    for frame in range(100, 30000, 50):  # Test multiple frames
+
+        curr_frame = frame
+        q = q_all.iloc[curr_frame,1:] # Exclude time column, 
+        markers = marker_data.iloc[curr_frame,2:] # Exclude time and frame column
+        key = list(q_all.columns[1:]) # Exclude time column
+
+        joints, markers_fk = forward_kinematics(q.values, key, kintree)
+        marker_error = evaluate_marker_error(markers_fk, markers)
+        errors.append(marker_error)
+
+    marker_error = np.mean(errors)*1e3
+    print(f"Average marker error over {len(errors)} frames: {marker_error:.2f} mm")
+    assert marker_error < 50.0, f"Marker error should be less than 50 mm, got {marker_error:.2f} mm"
+
 if __name__ == "__main__":
     # Run tests
     pass

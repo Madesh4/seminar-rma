@@ -1,9 +1,13 @@
 import pandas as pd
+# suppress pandas warnings for cleaner output
+import warnings
 import numpy as np
 
 def load_marker_data(file_path="data/Trial1_marker.trc"):
     """Load marker data from a .trc file"""
-    marker_data = pd.read_csv(file_path, sep='\t', skiprows=3)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", pd.errors.DtypeWarning)
+        marker_data = pd.read_csv(file_path, sep='\t', skiprows=3)
     
     # Clean up header: 
     # The header has marker names in first row and X1, Y1, Z1, etc. in second row
@@ -33,7 +37,10 @@ def load_marker_data(file_path="data/Trial1_marker.trc"):
                 new_columns.append(col)
     
     marker_data.columns = new_columns
-    return marker_data.iloc[1:]
+    marker_data = marker_data.iloc[1:]
+    # Convert the strings to numeric, coerce errors to NaN
+    marker_data = marker_data.apply(pd.to_numeric, errors='coerce')
+    return marker_data
 
 def load_grf_data(file_path="data/Trial1_GRF.mot"):
     """Load ground reaction force data from a .mot file"""
