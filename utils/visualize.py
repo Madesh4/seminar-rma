@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+import numpy as np
 
 def visualize_markers(marker_positions_FK, marker_positions_exp):
     """Visualize the markers from FK and experimental data"""
