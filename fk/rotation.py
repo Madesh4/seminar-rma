@@ -1,5 +1,3 @@
-import torch 
-
 def rotate_by_axis(point, axis, angle):
     """
     Rotate a set of point around a given axis by a specified angle.
@@ -21,37 +19,6 @@ def rotate_by_axis(point, axis, angle):
     # Caveat: Our testing will use numpy arrays, so you might need to type-check and convert to other data types if necessary.
     pass
 
-    if not isinstance(point, torch.Tensor):
-        point = torch.tensor(point, dtype=torch.float32)
-    if not isinstance(axis, torch.Tensor):
-        axis = torch.tensor(axis, dtype=torch.float32)
-    if not isinstance(angle, torch.Tensor):
-        angle = torch.tensor(angle, dtype=torch.float32)
-    sin = torch.sin(angle)
-    cos = torch.cos(angle)
-
-    if list(axis) == [1, 0, 0]:  # Rotation around x-axis
-        rotation_matrix = torch.tensor([
-            [1, 0, 0],
-            [0, cos, -sin],
-            [0, sin, cos]
-        ], dtype=torch.float32
-        )
-    elif list(axis) == [0, 1, 0]:  # Rotation around y-axis
-        rotation_matrix = torch.tensor([
-            [cos, 0, sin],
-            [0, 1, 0],
-            [-sin, 0, cos]], dtype=torch.float32
-        )
-    elif list(axis) == [0, 0, 1]:  # Rotation around z-axis
-        rotation_matrix = torch.tensor([
-            [cos, -sin, 0],
-            [sin, cos, 0],
-            [0, 0, 1]
-        ], dtype=torch.float32)
-
-    return torch.matmul(rotation_matrix, point.T).T, rotation_matrix
-
 def rotate_multi_axis(point, order, angles):
     """
     Rotate a point around multiple axes in a specified order.
@@ -69,25 +36,3 @@ def rotate_multi_axis(point, order, angles):
     # TODO: Implement the multi-axis rotation logic here
     # Caveat: Our testing will use numpy arrays, so you might need to type-check and convert to other data types if necessary.
     pass
-
-    if not isinstance(point, torch.Tensor):
-        point = torch.tensor(point, dtype=torch.float32)
-    if not isinstance(angles, torch.Tensor):
-        angles = torch.tensor(angles, dtype=torch.float32)
-
-    # Initialize the rotated points as the original points
-    rotated_points = point
-    rotations = []
-
-    for i, axis in enumerate(order):
-        if axis == 'x':
-            _, rotation = rotate_by_axis(rotated_points, torch.tensor([1, 0, 0], dtype=torch.float32), angles[i])
-        elif axis == 'y':
-            _, rotation = rotate_by_axis(rotated_points, torch.tensor([0, 1, 0], dtype=torch.float32), angles[i])
-        elif axis == 'z':
-            _, rotation = rotate_by_axis(rotated_points, torch.tensor([0, 0, 1], dtype=torch.float32), angles[i])
-        rotations.append(rotation)
-    
-    matrix = rotations[2] @ (rotations[1] @ rotations[0])  # Combined rotation matrix
-    rotated_points = torch.matmul(matrix, point.T).T
-    return rotated_points, matrix
