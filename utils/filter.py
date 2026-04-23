@@ -20,4 +20,7 @@ def butterworth_lowpass_filter(data, cutoff, fs, order=2):
     # Iterate over each column and apply the filter
     # !Do not filter time or frame number columns!
     # We use order = 2 as a default, because filtfilt effectively doubles the order
+    
+    # Design the Butterworth filter
+
     pass 
